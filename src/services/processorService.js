@@ -34,30 +34,47 @@ async function processUpdate (message) {
     createUser: createUserId
   }
 
-  // the properties of userPayment
-  try {
-    const userPayment = _.assign({
-      memberId: message.payload.task.memberId,
-      amount: _.head(_.find(message.payload.prizeSets, ['type', 'placement']).prizes).value,
-      desc: `Task - ${message.payload.name} - First Place`,
-      typeId: config.WINNER_PAYMENT_TYPE_ID
-    }, basePayment)
-    await paymentService.createPayment(userPayment)
-  } catch (error) {
-    logger.error(`For challenge ${challengeId}, user prize info missing: ${error}`)
+  // add winner payment
+  const winnerPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'prizes', [])
+  const winnerMembers = _.sortBy(_.get(message.payload, 'winners', []), ['placement'])
+  if (_.isEmpty(winnerPrizes)) {
+    logger.warn(`For challenge ${challengeId}, no winner payment avaiable`)
+  } else if (winnerPrizes.length !== winnerMembers.length) {
+    logger.error(`For challenge ${challengeId}, there is ${winnerPrizes.length} user prizes but ${winnerMembers.length} winners`)
+  } else {
+    try {
+      for (let i = 1; i <= winnerPrizes.length; i++) {
+        await paymentService.createPayment(_.assign({
+          memberId: winnerMembers[i - 1].userId,
+          amount: winnerPrizes[i - 1].value,
+          desc: `Task - ${message.payload.name} - ${i} Place`,
+          typeId: config.WINNER_PAYMENT_TYPE_ID
+        }, basePayment))
+      }
+    } catch (error) {
+      logger.error(`For challenge ${challengeId}, add winner payments error: ${error}`)
+    }
   }
 
-  // the properties of copilotPayment
-  try {
-    const copilotPayment = _.assign({
-      memberId: createUserId,
-      amount: _.head(_.find(message.payload.prizeSets, ['type', 'copilot']).prizes).value,
-      desc: `Task - ${message.payload.name} - Copilot`,
-      typeId: config.COPILOT_PAYMENT_TYPE_ID
-    }, basePayment)
-    await paymentService.createPayment(copilotPayment)
-  } catch (error) {
-    logger.debug(`For challenge ${challengeId}, no copilot payment avaiable`)
+  // add copilot payment
+  const copilotId = await helper.getCopilotId(message.payload.id)
+  const copilotAmount = _.get(_.head(_.get(_.find(message.payload.prizeSets, ['type', 'copilot']), 'prizes', [])), 'value')
+  if (!copilotAmount) {
+    logger.warn(`For challenge ${challengeId}, no copilot payment avaiable`)
+  } else if (!copilotId) {
+    logger.warn(`For challenge ${challengeId}, no copilot memberId avaiable`)
+  } else {
+    try {
+      const copilotPayment = _.assign({
+        memberId: copilotId,
+        amount: copilotAmount,
+        desc: `Task - ${message.payload.name} - Copilot`,
+        typeId: config.COPILOT_PAYMENT_TYPE_ID
+      }, basePayment)
+      await paymentService.createPayment(copilotPayment)
+    } catch (error) {
+      logger.error(`For challenge ${challengeId}, add copilot payments error: ${error}`)
+    }
   }
 }
 
@@ -68,18 +85,23 @@ processUpdate.schema = {
     timestamp: Joi.date().required(),
     'mime-type': Joi.string().required(),
     payload: Joi.object().keys({
-      id: Joi.string(),
+      id: Joi.string().required(),
       legacyId: Joi.number().integer().positive(),
       task: Joi.object().keys({
         memberId: Joi.string().allow(null)
       }).unknown(true).required(),
-      name: Joi.string(),
+      name: Joi.string().required(),
       prizeSets: Joi.array().items(Joi.object().keys({
         type: Joi.string().valid('copilot', 'placement').required(),
         prizes: Joi.array().items(Joi.object().keys({
           value: Joi.number().positive().required()
         }).unknown(true))
       }).unknown(true)).min(1),
+      winners: Joi.array().items(Joi.object({
+        userId: Joi.string().required(),
+        handle: Joi.string(),
+        placement: Joi.number().integer().positive().required()
+      }).unknown(true)),
       type: Joi.string().required(),
       status: Joi.string().required(),
       createdBy: Joi.string().required()

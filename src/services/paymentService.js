@@ -39,6 +39,7 @@ async function createPayment (payment) {
   const paymentDetailId = await paymentDetailIdGen.getNextId()
   const paymentId = await paymentIdGen.getNextId()
   try {
+    await connection.beginTransactionAsync()
     const insertDetail = await prepare(connection, INSERT_PAYMENT_DETAIL)
     await insertDetail.executeAsync([paymentDetailId, payment.amount, payment.amount, payment.statusId, payment.modificationRationaleId, payment.desc, payment.typeId, payment.methodId, payment.projectId, payment.charityInd, payment.amount, payment.installmentNumber, payment.createUser])
     const insertPayment = await prepare(connection, INSERT_PAYMENT)
@@ -46,6 +47,7 @@ async function createPayment (payment) {
     const insertDetailXref = await prepare(connection, INSERT_PAYMENT_DETAIL_XREF)
     await insertDetailXref.executeAsync([paymentId, paymentDetailId])
     logger.info(`Payment ${paymentId} with detail ${paymentDetailId} has been inserted`)
+    await connection.commitTransactionAsync()
   } catch (e) {
     logger.error(`Error in 'createPayment' ${e}, rolling back transaction`)
     await connection.rollbackTransactionAsync()

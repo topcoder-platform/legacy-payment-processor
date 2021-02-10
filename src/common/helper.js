@@ -130,6 +130,22 @@ async function getUserId (handle) {
   return res.body.userId
 }
 
+/**
+ * Function to get copilot id
+ * @param {String} challengeId the challengeId
+ * @returns {String} the userId
+ */
+async function getCopilotId (challengeId) {
+  const token = await getM2MToken()
+  const url = `${config.TC_API}/resources?challengeId=${challengeId}&roleId=${config.COPILOT_ROLE_ID}`
+  const res = await request
+    .get(url)
+    .set('Authorization', `Bearer ${token}`)
+    .set('Content-Type', 'application/json')
+    .set('Accept', 'application/json')
+  return _.get(_.head(res.body), 'memberId')
+}
+
 module.exports = {
   getInformixConnection,
   getKafkaOptions,
@@ -137,5 +153,6 @@ module.exports = {
   getRequest,
   putRequest,
   postRequest,
-  getUserId
+  getUserId,
+  getCopilotId
 }

@@ -44,7 +44,7 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, a
     return
   }
 
-  if (_.upperCase(_.get(messageJSON.payload, 'type')) !== 'TASK' || _.upperCase(_.get(messageJSON.payload, 'status')) !== 'COMPLETED') {
+  if (_.toUpper(_.get(messageJSON.payload, 'type')) !== 'TASK' || _.toUpper(_.get(messageJSON.payload, 'status')) !== 'COMPLETED') {
     logger.info(`The message type ${_.get(messageJSON.payload, 'type')}, status ${_.get(messageJSON.payload, 'status')} doesn't match {type: 'Task', status: 'Completed'}.`)
 
     // commit the message and ignore it
