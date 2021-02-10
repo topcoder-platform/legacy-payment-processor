@@ -16,12 +16,11 @@ const config = require('config')
  */
 async function processUpdate (message) {
   const createUserId = await helper.getUserId(message.payload.createdBy)
-  if (!message.payload.legacyId) {
-    logger.warn(`The message ${message.payload.id} does not contain a legacy id`)
-    // the connection statement can't accept undefined, so set it to null
-    message.payload.legacyId = null
+  const legacyId = _.get(message, 'payload.legacyId', null)
+
+  if (!legacyId) {
+    logger.warn(`payload of challenge ${message.payload.id} does not contain a legacy id`)
   }
-  const challengeId = _.get(message, 'payload.legacyId')
   const grossAmount = _.sumBy(_.flatMap(message.payload.prizeSets, 'prizes'), 'value')
 
   // the same properties of userPayment and copilotPayment
@@ -29,7 +28,7 @@ async function processUpdate (message) {
     statusId: config.PAYMENT_STATUS_ID,
     modificationRationaleId: config.MODIFICATION_RATIONALE_ID,
     methodId: config.PAYMENT_METHOD_ID,
-    projectId: message.payload.legacyId,
+    projectId: legacyId,
     charityInd: config.CHARITY_IND,
     installmentNumber: config.INSTALLMENT_NUMBER,
     createUser: createUserId,
@@ -42,7 +41,7 @@ async function processUpdate (message) {
   if (_.isEmpty(winnerPrizes)) {
     logger.warn(`For challenge ${challengeId}, no winner payment avaiable`)
   } else if (winnerPrizes.length !== winnerMembers.length) {
-    logger.error(`For challenge ${challengeId}, there is ${winnerPrizes.length} user prizes but ${winnerMembers.length} winners`)
+    logger.error(`For challenge ${legacyId}, there is ${winnerPrizes.length} user prizes but ${winnerMembers.length} winners`)
   } else {
     try {
       for (let i = 1; i <= winnerPrizes.length; i++) {
@@ -54,7 +53,7 @@ async function processUpdate (message) {
         }, basePayment))
       }
     } catch (error) {
-      logger.error(`For challenge ${challengeId}, add winner payments error: ${error}`)
+      logger.error(`For challenge ${legacyId}, add winner payments error: ${error}`)
     }
   }
 
