@@ -22,6 +22,7 @@ async function processUpdate (message) {
     message.payload.legacyId = null
   }
   const challengeId = _.get(message, 'payload.legacyId')
+  const grossAmount = _.sumBy(_.flatMap(message.payload.prizeSets, 'prizes'), 'value')
 
   // the same properties of userPayment and copilotPayment
   const basePayment = {
@@ -31,7 +32,8 @@ async function processUpdate (message) {
     projectId: message.payload.legacyId,
     charityInd: config.CHARITY_IND,
     installmentNumber: config.INSTALLMENT_NUMBER,
-    createUser: createUserId
+    createUser: createUserId,
+    grossAmount
   }
 
   // add winner payment
