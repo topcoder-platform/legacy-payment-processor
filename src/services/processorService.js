@@ -39,7 +39,7 @@ async function processUpdate (message) {
   const winnerPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'prizes', [])
   const winnerMembers = _.sortBy(_.get(message.payload, 'winners', []), ['placement'])
   if (_.isEmpty(winnerPrizes)) {
-    logger.warn(`For challenge ${challengeId}, no winner payment avaiable`)
+    logger.warn(`For challenge ${legacyId}, no winner payment avaiable`)
   } else if (winnerPrizes.length !== winnerMembers.length) {
     logger.error(`For challenge ${legacyId}, there is ${winnerPrizes.length} user prizes but ${winnerMembers.length} winners`)
   } else {
@@ -61,9 +61,9 @@ async function processUpdate (message) {
   const copilotId = await helper.getCopilotId(message.payload.id)
   const copilotAmount = _.get(_.head(_.get(_.find(message.payload.prizeSets, ['type', 'copilot']), 'prizes', [])), 'value')
   if (!copilotAmount) {
-    logger.warn(`For challenge ${challengeId}, no copilot payment avaiable`)
+    logger.warn(`For challenge ${legacyId}, no copilot payment avaiable`)
   } else if (!copilotId) {
-    logger.warn(`For challenge ${challengeId}, no copilot memberId avaiable`)
+    logger.warn(`For challenge ${legacyId}, no copilot memberId avaiable`)
   } else {
     try {
       const copilotPayment = _.assign({
@@ -74,7 +74,7 @@ async function processUpdate (message) {
       }, basePayment)
       await paymentService.createPayment(copilotPayment)
     } catch (error) {
-      logger.error(`For challenge ${challengeId}, add copilot payments error: ${error}`)
+      logger.error(`For challenge ${legacyId}, add copilot payments error: ${error}`)
     }
   }
 }
