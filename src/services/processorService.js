@@ -14,7 +14,7 @@ const config = require('config')
  * Process update challenge message
  * @param {Object} message the kafka message
  */
-async function processUpdate (message) {
+async function processUpdate(message) {
   const createUserId = await helper.getUserId(message.payload.createdBy)
   const legacyId = _.get(message, 'payload.legacyId', null)
 
@@ -36,46 +36,50 @@ async function processUpdate (message) {
   }
 
   // add winner payment
-  const winnerPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'prizes', [])
-  const winnerMembers = _.sortBy(_.get(message.payload, 'winners', []), ['placement'])
-  if (_.isEmpty(winnerPrizes)) {
-    logger.warn(`For challenge ${legacyId}, no winner payment avaiable`)
-  } else if (winnerPrizes.length !== winnerMembers.length) {
-    logger.error(`For challenge ${legacyId}, there is ${winnerPrizes.length} user prizes but ${winnerMembers.length} winners`)
-  } else {
-    try {
-      for (let i = 1; i <= winnerPrizes.length; i++) {
-        await paymentService.createPayment(_.assign({
-          memberId: winnerMembers[i - 1].userId,
-          amount: winnerPrizes[i - 1].value,
-          desc: `Task - ${message.payload.name} - ${i} Place`,
-          typeId: config.WINNER_PAYMENT_TYPE_ID
-        }, basePayment))
+  try {
+    const winnerPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'prizes', [])
+    const winnerMembers = _.sortBy(_.get(message.payload, 'winners', []), ['placement'])
+    if (_.isEmpty(winnerPrizes)) {
+      logger.warn(`For challenge ${legacyId}, no winner payment avaiable`)
+    } else if (winnerPrizes.length !== winnerMembers.length) {
+      logger.error(`For challenge ${legacyId}, there is ${winnerPrizes.length} user prizes but ${winnerMembers.length} winners`)
+    } else {
+      try {
+        for (let i = 1; i <= winnerPrizes.length; i++) {
+          await paymentService.createPayment(_.assign({
+            memberId: winnerMembers[i - 1].userId,
+            amount: winnerPrizes[i - 1].value,
+            desc: `Task - ${message.payload.name} - ${i} Place`,
+            typeId: config.WINNER_PAYMENT_TYPE_ID
+          }, basePayment))
+        }
+      } catch (error) {
+        logger.error(`For challenge ${legacyId}, add winner payments error: ${error}`)
       }
-    } catch (error) {
-      logger.error(`For challenge ${legacyId}, add winner payments error: ${error}`)
     }
-  }
 
-  // add copilot payment
-  const copilotId = await helper.getCopilotId(message.payload.id)
-  const copilotAmount = _.get(_.head(_.get(_.find(message.payload.prizeSets, ['type', 'copilot']), 'prizes', [])), 'value')
-  if (!copilotAmount) {
-    logger.warn(`For challenge ${legacyId}, no copilot payment avaiable`)
-  } else if (!copilotId) {
-    logger.warn(`For challenge ${legacyId}, no copilot memberId avaiable`)
-  } else {
-    try {
-      const copilotPayment = _.assign({
-        memberId: copilotId,
-        amount: copilotAmount,
-        desc: `Task - ${message.payload.name} - Copilot`,
-        typeId: config.COPILOT_PAYMENT_TYPE_ID
-      }, basePayment)
-      await paymentService.createPayment(copilotPayment)
-    } catch (error) {
-      logger.error(`For challenge ${legacyId}, add copilot payments error: ${error}`)
+    // add copilot payment
+    const copilotId = await helper.getCopilotId(message.payload.id)
+    const copilotAmount = _.get(_.head(_.get(_.find(message.payload.prizeSets, ['type', 'copilot']), 'prizes', [])), 'value')
+    if (!copilotAmount) {
+      logger.warn(`For challenge ${legacyId}, no copilot payment avaiable`)
+    } else if (!copilotId) {
+      logger.warn(`For challenge ${legacyId}, no copilot memberId avaiable`)
+    } else {
+      try {
+        const copilotPayment = _.assign({
+          memberId: copilotId,
+          amount: copilotAmount,
+          desc: `Task - ${message.payload.name} - Copilot`,
+          typeId: config.COPILOT_PAYMENT_TYPE_ID
+        }, basePayment)
+        await paymentService.createPayment(copilotPayment)
+      } catch (error) {
+        logger.error(`For challenge ${legacyId}, add copilot payments error: ${error}`)
+      }
     }
+  } catch (error) {
+    logger.error(`For challenge ${legacyId}, error occurred while parsing and preparing payment detail. Error: ${error}`)
   }
 }
 
