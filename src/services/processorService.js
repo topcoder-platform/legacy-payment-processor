@@ -103,7 +103,7 @@ processUpdate.schema = {
         }).unknown(true))
       }).unknown(true)).min(1),
       winners: Joi.array().items(Joi.object({
-        userId: Joi.string().required(),
+        userId: Joi.number().integer().positive().required(),
         handle: Joi.string(),
         placement: Joi.number().integer().positive().required()
       }).unknown(true)),
