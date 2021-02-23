@@ -44,6 +44,13 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, a
     return
   }
 
+  // Currently only process payments for challenges with `legacy.pureV5Task: true`
+  if (!_.get(messageJSON.payload, 'legacy.pureV5Task', false)) {
+    logger.info(`Challenge Legacy Object ${JSON.stringify(_.get(messageJSON.payload, 'legacy'))} does not have legacy.pureV5Task: true`)
+    await consumer.commitOffset({ topic, partition, offset: m.offset })
+    return
+  }
+
   if (_.toUpper(_.get(messageJSON.payload, 'type')) !== 'TASK' || _.toUpper(_.get(messageJSON.payload, 'status')) !== 'COMPLETED') {
     logger.info(`The message type ${_.get(messageJSON.payload, 'type')}, status ${_.get(messageJSON.payload, 'status')} doesn't match {type: 'Task', status: 'Completed'}.`)
 
