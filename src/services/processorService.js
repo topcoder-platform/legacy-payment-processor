@@ -17,10 +17,10 @@ const config = require('config')
 async function processUpdate(message) {
   const createUserId = await helper.getUserId(message.payload.createdBy)
   const legacyId = _.get(message, 'payload.legacyId', null)
-  const v5challengeId = _.get(message, 'payload.id', null)
+  const v5ChallengeId = _.get(message, 'payload.id', null)
 
   if (!legacyId) {
-    logger.warn(`payload of challenge ${v5challengeId} does not contain a legacy id`)
+    logger.warn(`payload of challenge ${v5ChallengeId} does not contain a legacy id`)
   }
   const grossAmount = _.sumBy(_.flatMap(message.payload.prizeSets, 'prizes'), 'value')
 
