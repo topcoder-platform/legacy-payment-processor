@@ -17,9 +17,10 @@ const config = require('config')
 async function processUpdate(message) {
   const createUserId = await helper.getUserId(message.payload.createdBy)
   const legacyId = _.get(message, 'payload.legacyId', null)
+  const v5challengeId = _.get(message, 'payload.id', null)
 
   if (!legacyId) {
-    logger.warn(`payload of challenge ${message.payload.id} does not contain a legacy id`)
+    logger.warn(`payload of challenge ${v5challengeId} does not contain a legacy id`)
   }
   const grossAmount = _.sumBy(_.flatMap(message.payload.prizeSets, 'prizes'), 'value')
 
@@ -32,12 +33,14 @@ async function processUpdate(message) {
     charityInd: config.CHARITY_IND,
     installmentNumber: config.INSTALLMENT_NUMBER,
     createUser: createUserId,
-    grossAmount
+    grossAmount,
+    v5ChallengeId
   }
 
   // add winner payment
   try {
     const winnerPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'prizes', [])
+    const winnerPaymentDesc = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'description', '')
     const winnerMembers = _.sortBy(_.get(message.payload, 'winners', []), ['placement'])
     if (_.isEmpty(winnerPrizes)) {
       logger.warn(`For challenge ${legacyId}, no winner payment avaiable`)
@@ -49,7 +52,7 @@ async function processUpdate(message) {
           await paymentService.createPayment(_.assign({
             memberId: winnerMembers[i - 1].userId,
             amount: winnerPrizes[i - 1].value,
-            desc: `Task - ${message.payload.name} - ${i} Place`,
+            desc: (winnerPaymentDesc ? winnerPaymentDesc : `Task - ${message.payload.name} - ${i} Place`),
             typeId: config.WINNER_PAYMENT_TYPE_ID
           }, basePayment))
         }
@@ -61,6 +64,8 @@ async function processUpdate(message) {
     // add copilot payment
     const copilotId = await helper.getCopilotId(message.payload.id)
     const copilotAmount = _.get(_.head(_.get(_.find(message.payload.prizeSets, ['type', 'copilot']), 'prizes', [])), 'value')
+    const copilotPaymentDesc = _.get(_.find(message.payload.prizeSets, ['type', 'copilot']), 'description', '')
+
     if (!copilotAmount) {
       logger.warn(`For challenge ${legacyId}, no copilot payment avaiable`)
     } else if (!copilotId) {
@@ -70,7 +75,7 @@ async function processUpdate(message) {
         const copilotPayment = _.assign({
           memberId: copilotId,
           amount: copilotAmount,
-          desc: `Task - ${message.payload.name} - Copilot`,
+          desc: (copilotPaymentDesc ? copilotPaymentDesc : `Task - ${message.payload.name} - Copilot`),
           typeId: config.COPILOT_PAYMENT_TYPE_ID
         }, basePayment)
         await paymentService.createPayment(copilotPayment)
