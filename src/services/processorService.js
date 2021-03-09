@@ -22,7 +22,7 @@ async function processUpdate(message) {
   if (!legacyId) {
     logger.warn(`payload of challenge ${v5ChallengeId} does not contain a legacy id`)
   }
-  const grossAmount = _.sumBy(_.flatMap(message.payload.prizeSets, 'prizes'), 'value')
+  //const grossAmount = _.sumBy(_.flatMap(message.payload.prizeSets, 'prizes'), 'value')
 
   // the same properties of userPayment and copilotPayment
   const basePayment = {
@@ -33,7 +33,6 @@ async function processUpdate(message) {
     charityInd: config.CHARITY_IND,
     installmentNumber: config.INSTALLMENT_NUMBER,
     createUser: createUserId,
-    grossAmount,
     v5ChallengeId
   }
 
