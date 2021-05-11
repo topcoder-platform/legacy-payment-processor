@@ -40,7 +40,7 @@ module.exports = {
   // Topcoder APIs
   TC_API: process.env.TC_API || 'https://api.topcoder-dev.com/v5',
 
-  PAYMENT_STATUS_ID: process.env.PAYMENT_STATUS_ID || 70,
+  PAYMENT_STATUS_ID: process.env.PAYMENT_STATUS_ID || 56,
   MODIFICATION_RATIONALE_ID: process.env.MODIFICATION_RATIONALE_ID || 1,
   WINNER_PAYMENT_TYPE_ID: process.env.WINNER_PAYMENT_TYPE_ID || 72,
   COPILOT_PAYMENT_TYPE_ID: process.env.COPILOT_PAYMENT_TYPE_ID || 74,
