@@ -4,6 +4,7 @@
  */
 const logger = require('../common/logger')
 const helper = require('../common/helper')
+const config = require('config');
 const IDGenerator = require('../common/idGenerator')
 
 // the paymentDetailId's generator
@@ -49,7 +50,7 @@ async function createPayment (payment) {
     const insertDetailXref = await prepare(connection, INSERT_PAYMENT_DETAIL_XREF)
     await insertDetailXref.executeAsync([paymentId, paymentDetailId])
     const insertStatusXref = await prepare(connection, INSERT_PAYMENT_STATUS_REASON_XREF)
-    await insertStatusXref.executeAsync([paymentDetailId, V5_PAYMENT_DETAIL_STATUS_ID])
+    await insertStatusXref.executeAsync([paymentDetailId, config.V5_PAYMENT_DETAIL_STATUS_REASON_ID])
     logger.info(`Payment ${paymentId} with detail ${paymentDetailId} has been inserted`)
     await connection.commitTransactionAsync()
   } catch (e) {
