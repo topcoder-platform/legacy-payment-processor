@@ -19,7 +19,7 @@ const INSERT_PAYMENT = 'INSERT INTO payment (payment_id, user_id, most_recent_de
 // the insert statement of payment detail xref
 const INSERT_PAYMENT_DETAIL_XREF = 'INSERT INTO payment_detail_xref (payment_id, payment_detail_id) VALUES(?,?)'
 
-const INSERT_PAYMENT_STATUS_REASON_XREF = 'INSERT INTO payment_status_reason_xref (payment_detail_id, payment_status_reason_id) VALUES(?,?)'
+const INSERT_PAYMENT_STATUS_REASON_XREF = 'INSERT INTO payment_detail_status_reason_xref (payment_detail_id, payment_status_reason_id) VALUES(?,?)'
 
 /**
  * Prepare Informix statement
