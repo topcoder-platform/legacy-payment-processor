@@ -39,7 +39,7 @@ async function processUpdate(message) {
   // add winner payment
   try {
     const winnerPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'prizes', [])
-    const winnerPaymentDesc = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'description', '')
+    // const winnerPaymentDesc = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'description', '')
     const winnerMembers = _.sortBy(_.get(message.payload, 'winners', []), ['placement'])
     if (_.isEmpty(winnerPrizes)) {
       logger.warn(`For challenge ${legacyId}, no winner payment avaiable`)
@@ -51,7 +51,7 @@ async function processUpdate(message) {
           await paymentService.createPayment(_.assign({
             memberId: winnerMembers[i - 1].userId,
             amount: winnerPrizes[i - 1].value,
-            desc: (winnerPaymentDesc ? winnerPaymentDesc : `Task - ${message.payload.name} - ${i} Place`),
+            desc: `Task - ${message.payload.name} - ${i} Place`,
             typeId: config.WINNER_PAYMENT_TYPE_ID
           }, basePayment))
         }
