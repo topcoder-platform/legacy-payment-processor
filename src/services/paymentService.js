@@ -13,7 +13,11 @@ const paymentDetailIdGen = new IDGenerator('PAYMENT_DETAIL_SEQ')
 const paymentIdGen = new IDGenerator('PAYMENT_SEQ')
 
 // the insert statement of payment detail
-const INSERT_PAYMENT_DETAIL = 'INSERT INTO payment_detail (payment_detail_id, net_amount,  gross_amount, payment_status_id, modification_rationale_id, payment_desc, payment_type_id, date_modified, date_due, payment_method_id, component_project_id, create_date, charity_ind, total_amount, installment_number, create_user, jira_issue_id) VALUES(?,?,?,?,?,?,?, CURRENT, CURRENT + INTERVAL (15) DAY(5) TO DAY,?,?, CURRENT,?,?,?,?,?)'
+const INSERT_PAYMENT_DETAIL = `INSERT INTO payment_detail (
+  payment_detail_id, net_amount,  gross_amount, payment_status_id, modification_rationale_id,
+  payment_desc, payment_type_id, date_modified, date_due, payment_method_id, component_project_id,
+  create_date, charity_ind, total_amount, installment_number, create_user,
+  jira_issue_id) VALUES(?,?,?,?,?,?,?, CURRENT, EXTEND(CURRENT + INTERVAL (15) DAY(5) TO DAY, YEAR TO DAY),?,?, CURRENT,?,?,?,?,?)`
 // the insert statement of payment
 const INSERT_PAYMENT = 'INSERT INTO payment (payment_id, user_id, most_recent_detail_id, create_date, modify_date, has_global_ad) VALUES(?,?,?, CURRENT, CURRENT, "f")'
 // the insert statement of payment detail xref
