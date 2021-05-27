@@ -57,7 +57,8 @@ async function processUpdate(message) {
           }, basePayment)
 
           const paymentExists = await paymentService.paymentExists(payment)
-          if(!paymentExists) {
+          logger.debug(`Payment Exists Response: ${JSON.stringify(paymentExists)}`)
+          if(!paymentExists || paymentExists.length === 0) {
             await paymentService.createPayment(payment)
           } else {
             logger.error(`Payment Exists for ${v5ChallengeId}, skipping - ${JSON.stringify(paymentExists)}`)
@@ -86,7 +87,8 @@ async function processUpdate(message) {
           typeId: config.COPILOT_PAYMENT_TYPE_ID
         }, basePayment)
         const paymentExists = await paymentService.paymentExists(copilotPayment)
-        if(!paymentExists) {
+        logger.debug(`Copilot Payment Exists Response: ${JSON.stringify(paymentExists)}`)
+        if(!paymentExists || paymentExists.length === 0) {
           await paymentService.createPayment(copilotPayment)
         } else {
           logger.error(`Copilot Payment Exists for ${v5ChallengeId}, skipping - ${JSON.stringify(paymentExists)}`)

@@ -2,6 +2,7 @@
  * Payment Service
  * Interacts with InformixDB
  */
+const util = require('util')
 const logger = require('../common/logger')
 const helper = require('../common/helper')
 const config = require('config');
@@ -58,7 +59,7 @@ async function paymentExists(payment) {
     logger.debug(`Checking if paymentExists - ${query}`)
     return connection.queryAsync(query)
   } catch (e) {
-    logger.error(`Error in 'getGroupsForChallenge' ${e}`)
+    logger.error(`Error in 'paymentExists' ${e}`)
     throw e
   } finally {
     await connection.closeAsync()
