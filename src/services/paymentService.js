@@ -12,11 +12,25 @@ const paymentDetailIdGen = new IDGenerator('PAYMENT_DETAIL_SEQ')
 // the paymentId's generator
 const paymentIdGen = new IDGenerator('PAYMENT_SEQ')
 
+// TODO - NOT checking on pd.net_amount = %d for now because you could edit an amount it'd create another payment.
+const QUERY_PAYMENT = `SELECT 
+p.payment_id, pd.payment_detail_id, pd.payment_desc, pd.payment_type_id, pd.payment_method_id, 
+p.create_date, pd.create_date as modify_date, pd.net_amount, 
+pd.payment_status_id, p.user_id,
+pd.date_modified, pd.date_paid, pd.gross_amount,
+pd.parent_payment_id, pd.total_amount, pd.installment_number, pd.jira_issue_id
+FROM payment p
+INNER JOIN payment_detail pd ON pd.payment_detail_id = p.most_recent_detail_id
+WHERE
+  p.user_id = %d
+  AND pd.jira_issue_id = %s
+  AND pd.payment_type_id = %d
+`
 // the insert statement of payment detail
 const INSERT_PAYMENT_DETAIL = `INSERT INTO payment_detail (
-  payment_detail_id, net_amount,  gross_amount, payment_status_id, modification_rationale_id,
-  payment_desc, payment_type_id, date_modified, date_due, payment_method_id, component_project_id,
-  create_date, charity_ind, total_amount, installment_number, create_user,
+  payment_detail_id, net_amount,  gross_amount, payment_status_id, modification_rationale_id, 
+  payment_desc, payment_type_id, date_modified, date_due, payment_method_id, component_project_id, 
+  create_date, charity_ind, total_amount, installment_number, create_user, 
   jira_issue_id) VALUES(?,?,?,?,?,?,?, CURRENT, EXTEND(CURRENT + INTERVAL (15) DAY(5) TO DAY, YEAR TO DAY),?,?, CURRENT,?,?,?,?,?)`
 // the insert statement of payment
 const INSERT_PAYMENT = 'INSERT INTO payment (payment_id, user_id, most_recent_detail_id, create_date, modify_date, has_global_ad) VALUES(?,?,?, CURRENT, CURRENT, "f")'
@@ -35,6 +49,19 @@ async function prepare (connection, sql) {
   logger.debug(`Preparing SQL ${sql}`)
   const stmt = await connection.prepareAsync(sql)
   return Promise.promisifyAll(stmt)
+}
+
+async function paymentExists(payment) {
+  const connection = await helper.getInformixConnection()
+  try {
+    logger.debug(`paymentExists - ${QUERY_PAYMENT}`)
+    return connection.queryAsync(QUERY_PAYMENT)
+  } catch (e) {
+    logger.error(`Error in 'getGroupsForChallenge' ${e}`)
+    throw e
+  } finally {
+    await connection.closeAsync()
+  }
 }
 
 /**
@@ -67,5 +94,6 @@ async function createPayment (payment) {
 }
 
 module.exports = {
-  createPayment
+  createPayment,
+  paymentExists
 }
