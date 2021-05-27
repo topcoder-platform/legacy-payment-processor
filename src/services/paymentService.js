@@ -24,7 +24,7 @@ FROM payment p
 INNER JOIN payment_detail pd ON pd.payment_detail_id = p.most_recent_detail_id
 WHERE
   p.user_id = %d
-  AND pd.jira_issue_id = %s
+  AND pd.jira_issue_id = '%s'
   AND pd.payment_type_id = %d
 `
 // the insert statement of payment detail
