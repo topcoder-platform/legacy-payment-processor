@@ -54,8 +54,9 @@ async function prepare (connection, sql) {
 async function paymentExists(payment) {
   const connection = await helper.getInformixConnection()
   try {
-    logger.debug(`paymentExists - ${QUERY_PAYMENT}`)
-    return connection.queryAsync(QUERY_PAYMENT)
+    const query = util.format(QUERY_PAYMENT, payment.memberId, payment.v5ChallengeId, payment.typeId)
+    logger.debug(`Checking if paymentExists - ${query}`)
+    return connection.queryAsync(query)
   } catch (e) {
     logger.error(`Error in 'getGroupsForChallenge' ${e}`)
     throw e
