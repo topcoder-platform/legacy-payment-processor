@@ -19,8 +19,9 @@ async function processUpdate(message) {
   const legacyId = _.get(message, 'payload.legacyId', null)
   const v5ChallengeId = _.get(message, 'payload.id', null)
 
-  if (!legacyId) {
-    logger.warn(`payload of challenge ${v5ChallengeId} does not contain a legacy id`)
+  if (!v5ChallengeId) {
+    logger.error('Payload of challenge does not contain a v5 Challenge UUID')
+    return false
   }
   //const grossAmount = _.sumBy(_.flatMap(message.payload.prizeSets, 'prizes'), 'value')
 
@@ -29,7 +30,7 @@ async function processUpdate(message) {
     statusId: config.PAYMENT_STATUS_ID,
     modificationRationaleId: config.MODIFICATION_RATIONALE_ID,
     methodId: config.PAYMENT_METHOD_ID,
-    projectId: legacyId,
+    projectId: legacyId, // this is not projectId from v5 - legacy calls a challenge a project
     charityInd: config.CHARITY_IND,
     installmentNumber: config.INSTALLMENT_NUMBER,
     createUser: createUserId,
@@ -42,21 +43,29 @@ async function processUpdate(message) {
     // const winnerPaymentDesc = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'description', '')
     const winnerMembers = _.sortBy(_.get(message.payload, 'winners', []), ['placement'])
     if (_.isEmpty(winnerPrizes)) {
-      logger.warn(`For challenge ${legacyId}, no winner payment avaiable`)
+      logger.warn(`For challenge ${v5ChallengeId}, no winner payment avaiable`)
     } else if (winnerPrizes.length !== winnerMembers.length) {
-      logger.error(`For challenge ${legacyId}, there is ${winnerPrizes.length} user prizes but ${winnerMembers.length} winners`)
+      logger.error(`For challenge ${v5ChallengeId}, there is ${winnerPrizes.length} user prizes but ${winnerMembers.length} winners`)
     } else {
       try {
         for (let i = 1; i <= winnerPrizes.length; i++) {
-          await paymentService.createPayment(_.assign({
+          const payment = _.assign({
             memberId: winnerMembers[i - 1].userId,
             amount: winnerPrizes[i - 1].value,
             desc: `Task - ${message.payload.name} - ${i} Place`,
             typeId: config.WINNER_PAYMENT_TYPE_ID
-          }, basePayment))
+          }, basePayment)
+
+          const paymentExists = await paymentService.paymentExists(payment)
+          logger.debug(`Payment Exists Response: ${JSON.stringify(paymentExists)}`)
+          if(!paymentExists || paymentExists.length === 0) {
+            await paymentService.createPayment(payment)
+          } else {
+            logger.error(`Payment Exists for ${v5ChallengeId}, skipping - ${JSON.stringify(paymentExists)}`)
+          }
         }
       } catch (error) {
-        logger.error(`For challenge ${legacyId}, add winner payments error: ${error}`)
+        logger.error(`For challenge ${v5ChallengeId}, add winner payments error: ${error}`)
       }
     }
 
@@ -66,9 +75,9 @@ async function processUpdate(message) {
     const copilotPaymentDesc = _.get(_.find(message.payload.prizeSets, ['type', 'copilot']), 'description', '')
 
     if (!copilotAmount) {
-      logger.warn(`For challenge ${legacyId}, no copilot payment avaiable`)
+      logger.warn(`For challenge ${v5ChallengeId}, no copilot payment available`)
     } else if (!copilotId) {
-      logger.warn(`For challenge ${legacyId}, no copilot memberId avaiable`)
+      logger.warn(`For challenge ${v5ChallengeId}, no copilot memberId available`)
     } else {
       try {
         const copilotPayment = _.assign({
@@ -77,13 +86,19 @@ async function processUpdate(message) {
           desc: (copilotPaymentDesc ? copilotPaymentDesc : `Task - ${message.payload.name} - Copilot`),
           typeId: config.COPILOT_PAYMENT_TYPE_ID
         }, basePayment)
-        await paymentService.createPayment(copilotPayment)
+        const paymentExists = await paymentService.paymentExists(copilotPayment)
+        logger.debug(`Copilot Payment Exists Response: ${JSON.stringify(paymentExists)}`)
+        if(!paymentExists || paymentExists.length === 0) {
+          await paymentService.createPayment(copilotPayment)
+        } else {
+          logger.error(`Copilot Payment Exists for ${v5ChallengeId}, skipping - ${JSON.stringify(paymentExists)}`)
+        }
       } catch (error) {
-        logger.error(`For challenge ${legacyId}, add copilot payments error: ${error}`)
+        logger.error(`For challenge ${v5ChallengeId}, add copilot payments error: ${error}`)
       }
     }
   } catch (error) {
-    logger.error(`For challenge ${legacyId}, error occurred while parsing and preparing payment detail. Error: ${error}`)
+    logger.error(`For challenge ${v5ChallengeId}, error occurred while parsing and preparing payment detail. Error: ${error}`)
   }
 }
 
