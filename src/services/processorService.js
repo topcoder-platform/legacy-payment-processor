@@ -19,7 +19,7 @@ async function processUpdate(message) {
   const legacyId = _.get(message, 'payload.legacyId', null)
   const v5ChallengeId = _.get(message, 'payload.id', null)
 
-  if (!v5ChallengeId) {
+  if (!v5ChallengeId || v5ChallengeId === '') {
     logger.error('Payload of challenge does not contain a v5 Challenge UUID')
     return false
   }

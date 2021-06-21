@@ -71,6 +71,7 @@ async function paymentExists(payment) {
  * @param {Object} payment the payment info
  */
 async function createPayment (payment) {
+  logger.debug(`Creating Payment -> v5ChallengeID: ${payment.v5ChallengeId} - obj: ${JSON.stringify(payment)}`)
   const connection = await helper.getInformixConnection()
   const paymentDetailId = await paymentDetailIdGen.getNextId()
   const paymentId = await paymentIdGen.getNextId()
