@@ -143,7 +143,7 @@ processUpdate.schema = {
       legacyId: Joi.number().integer().positive(),
       task: Joi.object().keys({
         memberId: Joi.string().allow(null)
-      }).unknown(true).required(),
+      }).unknown(true),
       name: Joi.string().required(),
       prizeSets: Joi.array().items(Joi.object().keys({
         type: Joi.string().valid('copilot', 'placement').required(),
