@@ -40,8 +40,11 @@ async function processUpdate(message) {
   // add winner payment
   try {
     const winnerPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'prizes', [])
+    const checkpointPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'checkpoint']), 'prizes', [])
     // const winnerPaymentDesc = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'description', '')
-    const winnerMembers = _.sortBy(_.get(message.payload, 'winners', []), ['placement'])
+    //` w => w.type === 'placement' || _.isUndefined(w.type)` is used here to support challenges where the type is not set (old data or other tracks that only have placements)
+    const winnerMembers = _.sortBy(_.filter(_.get(message.payload, 'winners', []), w => w.type === 'placement' || _.isUndefined(w.type)), ['placement'])
+    const checkpointWinnerMembers = _.sortBy(_.filter(_.get(message.payload, 'winners', []), w => w.type === 'checkpoint'), ['placement'])
     if (_.isEmpty(winnerPrizes)) {
       logger.warn(`For challenge ${v5ChallengeId}, no winner payment avaiable`)
     } else if (winnerPrizes.length !== winnerMembers.length) {
@@ -52,7 +55,7 @@ async function processUpdate(message) {
           const payment = _.assign({
             memberId: winnerMembers[i - 1].userId,
             amount: winnerPrizes[i - 1].value,
-            desc: `Task - ${message.payload.name} - ${i} Place`,
+            desc: `Payment - ${message.payload.name} - ${i} Place`,
             typeId: config.WINNER_PAYMENT_TYPE_ID
           }, basePayment)
 
@@ -66,6 +69,33 @@ async function processUpdate(message) {
         }
       } catch (error) {
         logger.error(`For challenge ${v5ChallengeId}, add winner payments error: ${error}`)
+      }
+    }
+
+    if (_.isEmpty(checkpointPrizes)) {
+      logger.warn(`For challenge ${v5ChallengeId}, no checkpoint winner payment avaiable`)
+    } else if (checkpointPrizes.length !== checkpointWinnerMembers.length) {
+      logger.error(`For challenge ${v5ChallengeId}, there is ${checkpointPrizes.length} user prizes but ${checkpointWinnerMembers.length} winners`)
+    } else {
+      try {
+        for (let i = 1; i <= checkpointPrizes.length; i++) {
+          const payment = _.assign({
+            memberId: checkpointWinnerMembers[i - 1].userId,
+            amount: checkpointPrizes[i - 1].value,
+            desc: `Payment - ${message.payload.name} - ${i} Place`,
+            typeId: config.CHECKPOINT_WINNER_PAYMENT_TYPE_ID
+          }, basePayment)
+
+          const paymentExists = await paymentService.paymentExists(payment)
+          logger.debug(`Payment Exists Response: ${JSON.stringify(paymentExists)}`)
+          if(!paymentExists || paymentExists.length === 0) {
+            await paymentService.createPayment(payment)
+          } else {
+            logger.error(`Payment Exists for ${v5ChallengeId}, skipping - ${JSON.stringify(paymentExists)}`)
+          }
+        }
+      } catch (error) {
+        logger.error(`For challenge ${v5ChallengeId}, add checkpoint winner payments error: ${error}`)
       }
     }
 
@@ -124,7 +154,8 @@ processUpdate.schema = {
       winners: Joi.array().items(Joi.object({
         userId: Joi.number().integer().positive().required(),
         handle: Joi.string(),
-        placement: Joi.number().integer().positive().required()
+        placement: Joi.number().integer().positive().required(),
+        type: Joi.string().valid(['placement', 'checkpoint'])
       }).unknown(true)),
       type: Joi.string().required(),
       status: Joi.string().required(),
