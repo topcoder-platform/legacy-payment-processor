@@ -82,7 +82,7 @@ async function processUpdate(message) {
           const payment = _.assign({
             memberId: checkpointWinnerMembers[i - 1].userId,
             amount: checkpointPrizes[i - 1].value,
-            desc: `Payment - ${message.payload.name} - ${i} Place`,
+            desc: `Checkpoint payment - ${message.payload.name} - ${i} Place`,
             typeId: config.CHECKPOINT_WINNER_PAYMENT_TYPE_ID
           }, basePayment)
 
@@ -113,7 +113,7 @@ async function processUpdate(message) {
         const copilotPayment = _.assign({
           memberId: copilotId,
           amount: copilotAmount,
-          desc: (copilotPaymentDesc ? copilotPaymentDesc : `Task - ${message.payload.name} - Copilot`),
+          desc: (copilotPaymentDesc ? copilotPaymentDesc : `${message.payload.name} - Copilot`),
           typeId: config.COPILOT_PAYMENT_TYPE_ID
         }, basePayment)
         const paymentExists = await paymentService.paymentExists(copilotPayment)
