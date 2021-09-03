@@ -146,7 +146,7 @@ processUpdate.schema = {
       }).unknown(true),
       name: Joi.string().required(),
       prizeSets: Joi.array().items(Joi.object().keys({
-        type: Joi.string().valid('copilot', 'placement').required(),
+        type: Joi.string().valid('copilot', 'placement', 'checkpoint').required(),
         prizes: Joi.array().items(Joi.object().keys({
           value: Joi.number().positive().required()
         }).unknown(true))
