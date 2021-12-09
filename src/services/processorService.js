@@ -59,13 +59,7 @@ async function processUpdate(message) {
             typeId: config.WINNER_PAYMENT_TYPE_ID
           }, basePayment)
 
-          const paymentExists = await paymentService.paymentExists(payment)
-          logger.debug(`Payment Exists Response: ${JSON.stringify(paymentExists)}`)
-          if(!paymentExists || paymentExists.length === 0) {
-            await paymentService.createPayment(payment)
-          } else {
-            logger.error(`Payment Exists for ${v5ChallengeId}, skipping - ${JSON.stringify(paymentExists)}`)
-          }
+          await paymentService.createPayment(payment)
         }
       } catch (error) {
         logger.error(`For challenge ${v5ChallengeId}, add winner payments error: ${error}`)
@@ -86,13 +80,7 @@ async function processUpdate(message) {
             typeId: config.CHECKPOINT_WINNER_PAYMENT_TYPE_ID
           }, basePayment)
 
-          const paymentExists = await paymentService.paymentExists(payment)
-          logger.debug(`Payment Exists Response: ${JSON.stringify(paymentExists)}`)
-          if(!paymentExists || paymentExists.length === 0) {
-            await paymentService.createPayment(payment)
-          } else {
-            logger.error(`Payment Exists for ${v5ChallengeId}, skipping - ${JSON.stringify(paymentExists)}`)
-          }
+          await paymentService.createPayment(payment)
         }
       } catch (error) {
         logger.error(`For challenge ${v5ChallengeId}, add checkpoint winner payments error: ${error}`)
@@ -116,13 +104,7 @@ async function processUpdate(message) {
           desc: (copilotPaymentDesc ? copilotPaymentDesc : `${message.payload.name} - Copilot`),
           typeId: config.COPILOT_PAYMENT_TYPE_ID
         }, basePayment)
-        const paymentExists = await paymentService.paymentExists(copilotPayment)
-        logger.debug(`Copilot Payment Exists Response: ${JSON.stringify(paymentExists)}`)
-        if(!paymentExists || paymentExists.length === 0) {
-          await paymentService.createPayment(copilotPayment)
-        } else {
-          logger.error(`Copilot Payment Exists for ${v5ChallengeId}, skipping - ${JSON.stringify(paymentExists)}`)
-        }
+        await paymentService.createPayment(copilotPayment)
       } catch (error) {
         logger.error(`For challenge ${v5ChallengeId}, add copilot payments error: ${error}`)
       }

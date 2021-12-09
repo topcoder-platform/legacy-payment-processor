@@ -60,6 +60,9 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, a
   }
 
   try {
+    // delay for a random amount of time between 5-20 sec
+    // to minimize the chance of having two processes doing the same at the same time
+    await helper.delay(helper.getRandomInt(5 * 1000, 20 * 1000))
     await processorService.processUpdate(messageJSON)
     logger.debug('Successfully processed message')
   } catch (err) {

@@ -46,14 +46,14 @@ const INSERT_PAYMENT_STATUS_REASON_XREF = 'INSERT INTO payment_detail_status_rea
  * @param {String} sql the sql
  * @return {Object} Informix statement
  */
-async function prepare (connection, sql) {
+async function prepare(connection, sql) {
   logger.debug(`Preparing SQL ${sql}`)
   const stmt = await connection.prepareAsync(sql)
   return Promise.promisifyAll(stmt)
 }
 
-async function paymentExists(payment) {
-  const connection = await helper.getInformixConnection()
+async function paymentExists(payment, connection) {
+  if (!connection) connection = await helper.getInformixConnection()
   try {
     const query = util.format(QUERY_PAYMENT, payment.memberId, payment.v5ChallengeId, payment.typeId)
     logger.debug(`Checking if paymentExists - ${query}`)
@@ -62,7 +62,7 @@ async function paymentExists(payment) {
     logger.error(`Error in 'paymentExists' ${e}`)
     throw e
   } finally {
-    await connection.closeAsync()
+    if (!existingConnection) await connection.closeAsync()
   }
 }
 
@@ -70,22 +70,30 @@ async function paymentExists(payment) {
  * Create payment and save it to db
  * @param {Object} payment the payment info
  */
-async function createPayment (payment) {
-  const connection = await helper.getInformixConnection()
-  const paymentDetailId = await paymentDetailIdGen.getNextId()
-  const paymentId = await paymentIdGen.getNextId()
+async function createPayment(payment) {
   try {
+    const connection = await helper.getInformixConnection()
     await connection.beginTransactionAsync()
-    const insertDetail = await prepare(connection, INSERT_PAYMENT_DETAIL)
-    await insertDetail.executeAsync([paymentDetailId, payment.amount, payment.amount, payment.statusId, payment.modificationRationaleId, payment.desc, payment.typeId, payment.methodId, payment.projectId, payment.charityInd, payment.amount, payment.installmentNumber, payment.createUser, payment.v5ChallengeId])
-    const insertPayment = await prepare(connection, INSERT_PAYMENT)
-    await insertPayment.executeAsync([paymentId, payment.memberId, paymentDetailId])
-    const insertDetailXref = await prepare(connection, INSERT_PAYMENT_DETAIL_XREF)
-    await insertDetailXref.executeAsync([paymentId, paymentDetailId])
-    const insertStatusXref = await prepare(connection, INSERT_PAYMENT_STATUS_REASON_XREF)
-    await insertStatusXref.executeAsync([paymentDetailId, config.V5_PAYMENT_DETAIL_STATUS_REASON_ID])
-    logger.info(`Payment ${paymentId} with detail ${paymentDetailId} has been inserted`)
-    await connection.commitTransactionAsync()
+
+    const paymentExists = await paymentExists(payment, connection)
+    logger.debug(`Payment Exists Response: ${JSON.stringify(paymentExists)}`)
+    if (!paymentExists || paymentExists.length === 0) {
+      const paymentDetailId = await paymentDetailIdGen.getNextId()
+      const paymentId = await paymentIdGen.getNextId()
+      const insertDetail = await prepare(connection, INSERT_PAYMENT_DETAIL)
+      await insertDetail.executeAsync([paymentDetailId, payment.amount, payment.amount, payment.statusId, payment.modificationRationaleId, payment.desc, payment.typeId, payment.methodId, payment.projectId, payment.charityInd, payment.amount, payment.installmentNumber, payment.createUser, payment.v5ChallengeId])
+      const insertPayment = await prepare(connection, INSERT_PAYMENT)
+      await insertPayment.executeAsync([paymentId, payment.memberId, paymentDetailId])
+      const insertDetailXref = await prepare(connection, INSERT_PAYMENT_DETAIL_XREF)
+      await insertDetailXref.executeAsync([paymentId, paymentDetailId])
+      const insertStatusXref = await prepare(connection, INSERT_PAYMENT_STATUS_REASON_XREF)
+      await insertStatusXref.executeAsync([paymentDetailId, config.V5_PAYMENT_DETAIL_STATUS_REASON_ID])
+      logger.info(`Payment ${paymentId} with detail ${paymentDetailId} has been inserted`)
+      await connection.commitTransactionAsync()
+    } else {
+      logger.error(`Payment Exists for ${payment.v5ChallengeId}, skipping - ${JSON.stringify(paymentExists)}`)
+      await connection.commitTransactionAsync()
+    }
   } catch (e) {
     logger.error(`Error in 'createPayment' ${e}, rolling back transaction`)
     await connection.rollbackTransactionAsync()
