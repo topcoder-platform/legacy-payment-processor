@@ -62,7 +62,7 @@ async function paymentExists(payment, connection) {
     logger.error(`Error in 'paymentExists' ${e}`)
     throw e
   } finally {
-    if (!existingConnection) await connection.closeAsync()
+    if (!connection) await connection.closeAsync()
   }
 }
 
