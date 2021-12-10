@@ -74,7 +74,7 @@ async function paymentExists(payment, connection) {
  * Create payment and save it to db
  * @param {Object} payment the payment info
  */
- async function createPayment(payment) {
+async function createPayment(payment) {
   try {
     const connection = await helper.getInformixConnection()
     await connection.beginTransactionAsync()
