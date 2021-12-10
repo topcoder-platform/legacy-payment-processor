@@ -85,7 +85,8 @@ async function createPayment(payment) {
       const paymentDetailId = await paymentDetailIdGen.getNextId()
       const paymentId = await paymentIdGen.getNextId()
       const insertDetail = await prepare(connection, INSERT_PAYMENT_DETAIL)
-      await insertDetail.executeAsync([paymentDetailId, payment.amount, payment.amount, payment.statusId, payment.modificationRationaleId, payment.desc, payment.typeId, payment.methodId, payment.projectId, payment.charityInd, payment.amount, payment.installmentNumber, payment.createUser, payment.v5ChallengeId])
+      await insertDetail.executeAsync([paymentDetailId, payment.amount, payment.amount, payment.statusId, payment.modificationRationaleId, payment.desc, payment.typeId, payment.methodId, payment.projectId, payment.charityInd, payment.amount, payment.installmentNumber, payment.createUser, payment.
+                                      ])
       const insertPayment = await prepare(connection, INSERT_PAYMENT)
       await insertPayment.executeAsync([paymentId, payment.memberId, paymentDetailId])
       const insertDetailXref = await prepare(connection, INSERT_PAYMENT_DETAIL_XREF)
