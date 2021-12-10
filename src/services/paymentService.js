@@ -74,7 +74,7 @@ async function paymentExists(payment, connection) {
  * Create payment and save it to db
  * @param {Object} payment the payment info
  */
-async function createPayment(payment) {
+ async function createPayment(payment) {
   try {
     const connection = await helper.getInformixConnection()
     await connection.beginTransactionAsync()
@@ -85,8 +85,7 @@ async function createPayment(payment) {
       const paymentDetailId = await paymentDetailIdGen.getNextId()
       const paymentId = await paymentIdGen.getNextId()
       const insertDetail = await prepare(connection, INSERT_PAYMENT_DETAIL)
-      await insertDetail.executeAsync([paymentDetailId, payment.amount, payment.amount, payment.statusId, payment.modificationRationaleId, payment.desc, payment.typeId, payment.methodId, payment.projectId, payment.charityInd, payment.amount, payment.installmentNumber, payment.createUser, payment.
-                                      ])
+      await insertDetail.executeAsync([paymentDetailId, payment.amount, payment.amount, payment.statusId, payment.modificationRationaleId, payment.desc, payment.typeId, payment.methodId, payment.projectId, payment.charityInd, payment.amount, payment.installmentNumber, payment.createUser, payment.v5ChallengeId])
       const insertPayment = await prepare(connection, INSERT_PAYMENT)
       await insertPayment.executeAsync([paymentId, payment.memberId, paymentDetailId])
       const insertDetailXref = await prepare(connection, INSERT_PAYMENT_DETAIL_XREF)
