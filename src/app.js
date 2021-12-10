@@ -44,15 +44,15 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, a
     return
   }
 
-  // Currently only process payments for challenges with `legacy.pureV5Task: true`
-  if (!_.get(messageJSON.payload, 'legacy.pureV5Task', false)) {
-    logger.info(`Challenge Legacy Object ${JSON.stringify(_.get(messageJSON.payload, 'legacy'))} does not have legacy.pureV5Task: true`)
+  // Currently only process payments for challenges with `legacy.pureV5Task: true` or `legacy.pureV5: true`
+  if (!_.get(messageJSON.payload, 'legacy.pureV5Task', false) && !_.get(messageJSON.payload, 'legacy.pureV5', false)) {
+    logger.info(`Challenge Legacy Object ${JSON.stringify(_.get(messageJSON.payload, 'legacy'))} does not have legacy.pureV5Task: true or legacy.pureV5: true`)
     await consumer.commitOffset({ topic, partition, offset: m.offset })
     return
   }
 
-  if (_.toUpper(_.get(messageJSON.payload, 'type')) !== 'TASK' || _.toUpper(_.get(messageJSON.payload, 'status')) !== 'COMPLETED') {
-    logger.info(`The message type ${_.get(messageJSON.payload, 'type')}, status ${_.get(messageJSON.payload, 'status')} doesn't match {type: 'Task', status: 'Completed'}.`)
+  if (_.toUpper(_.get(messageJSON.payload, 'status')) !== 'COMPLETED') {
+    logger.info(`The message type ${_.get(messageJSON.payload, 'type')}, status ${_.get(messageJSON.payload, 'status')} doesn't match {status: 'Completed'}.`)
 
     // commit the message and ignore it
     await consumer.commitOffset({ topic, partition, offset: m.offset })
@@ -60,6 +60,9 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, a
   }
 
   try {
+    // delay for a random amount of time between 5-20 sec
+    // to minimize the chance of having two processes doing the same at the same time
+    await helper.delay(helper.getRandomInt(5 * 1000, 20 * 1000))
     await processorService.processUpdate(messageJSON)
     logger.debug('Successfully processed message')
   } catch (err) {

@@ -146,6 +146,29 @@ async function getCopilotId (challengeId) {
   return _.get(_.head(res.body), 'memberId')
 }
 
+/**
+ * Creates a delay promise
+ * @param {Number} ms the milliseconds to delay
+ * @returns a promise
+ */
+function delay (ms) {
+  return new Promise(resolve => {
+      setTimeout(resolve, ms)
+  })
+}
+
+/**
+ * Generate a random integer
+ * @param {Number} min the min
+ * @param {Number} max the max
+ * @returns the random integer
+ */
+function getRandomInt(min, max) {
+  min = Math.ceil(min)
+  max = Math.floor(max)
+  return Math.floor(Math.random() * (max - min + 1)) + min
+}
+
 module.exports = {
   getInformixConnection,
   getKafkaOptions,
@@ -154,5 +177,7 @@ module.exports = {
   putRequest,
   postRequest,
   getUserId,
-  getCopilotId
+  getCopilotId,
+  delay,
+  getRandomInt
 }
