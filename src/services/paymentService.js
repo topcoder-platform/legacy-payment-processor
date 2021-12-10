@@ -79,9 +79,9 @@ async function createPayment(payment) {
     const connection = await helper.getInformixConnection()
     await connection.beginTransactionAsync()
 
-    const paymentExists = await paymentExists(payment, connection)
-    logger.debug(`Payment Exists Response: ${JSON.stringify(paymentExists)}`)
-    if (!paymentExists || paymentExists.length === 0) {
+    const existing = await paymentExists(payment, connection)
+    logger.debug(`Payment Exists Response: ${JSON.stringify(existing)}`)
+    if (!existing || existing.length === 0) {
       const paymentDetailId = await paymentDetailIdGen.getNextId()
       const paymentId = await paymentIdGen.getNextId()
       const insertDetail = await prepare(connection, INSERT_PAYMENT_DETAIL)
@@ -95,7 +95,7 @@ async function createPayment(payment) {
       logger.info(`Payment ${paymentId} with detail ${paymentDetailId} has been inserted`)
       await connection.commitTransactionAsync()
     } else {
-      logger.error(`Payment Exists for ${payment.v5ChallengeId}, skipping - ${JSON.stringify(paymentExists)}`)
+      logger.error(`Payment Exists for ${payment.v5ChallengeId}, skipping - ${JSON.stringify(existing)}`)
       await connection.commitTransactionAsync()
     }
   } catch (e) {
