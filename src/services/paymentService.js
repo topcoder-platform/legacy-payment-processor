@@ -53,7 +53,11 @@ async function prepare(connection, sql) {
 }
 
 async function paymentExists(payment, connection) {
-  if (!connection) connection = await helper.getInformixConnection()
+  let isNewConn = false
+  if (!connection) {
+    connection = await helper.getInformixConnection()
+    isNewConn = true
+  }
   try {
     const query = util.format(QUERY_PAYMENT, payment.memberId, payment.v5ChallengeId, payment.typeId)
     logger.debug(`Checking if paymentExists - ${query}`)
@@ -62,7 +66,7 @@ async function paymentExists(payment, connection) {
     logger.error(`Error in 'paymentExists' ${e}`)
     throw e
   } finally {
-    if (!connection) await connection.closeAsync()
+    if (isNewConn) await connection.closeAsync()
   }
 }
 
