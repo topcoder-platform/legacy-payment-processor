@@ -75,8 +75,9 @@ async function paymentExists(payment, connection) {
  * @param {Object} payment the payment info
  */
 async function createPayment(payment) {
+  let connection
   try {
-    const connection = await helper.getInformixConnection()
+    connection = await helper.getInformixConnection()
     await connection.beginTransactionAsync()
 
     const existing = await paymentExists(payment, connection)
