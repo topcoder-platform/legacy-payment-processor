@@ -120,7 +120,6 @@ processUpdate.schema = {
     originator: Joi.string().required(),
     timestamp: Joi.date().required(),
     'mime-type': Joi.string().required(),
-    key: Joi.string().allow(null),
     payload: Joi.object().keys({
       id: Joi.string().required(),
       legacyId: Joi.number().integer().positive(),
