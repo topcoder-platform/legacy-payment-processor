@@ -18,10 +18,19 @@ async function processUpdate(message) {
   const createUserId = await helper.getUserId(message.payload.createdBy)
   const legacyId = _.get(message, 'payload.legacyId', null)
   const v5ChallengeId = _.get(message, 'payload.id', null)
+  const status = _.get(message, 'payload.status', null)
 
   if (!v5ChallengeId || v5ChallengeId === '') {
     logger.error('Payload of challenge does not contain a v5 Challenge UUID')
     return false
+  }
+
+  if (status === config.CANCELLED_CLIENT_REQUEST_STATUS) {
+    const existingingPayments = await getChallengePayments(message.payload.id)
+    if (existingingPayments && existingingPayments.length > 0) {
+      await paymentService.cancelPayments(existingingPayments)
+    }
+    return
   }
   //const grossAmount = _.sumBy(_.flatMap(message.payload.prizeSets, 'prizes'), 'value')
 
