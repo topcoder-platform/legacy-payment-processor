@@ -13,6 +13,18 @@ const paymentDetailIdGen = new IDGenerator('PAYMENT_DETAIL_SEQ')
 // the paymentId's generator
 const paymentIdGen = new IDGenerator('PAYMENT_SEQ')
 
+const QUERY_EXISTING_PAYMENTS = `SELECT 
+p.payment_id, pd.payment_detail_id, pd.payment_desc, pd.payment_type_id, pd.payment_method_id, 
+p.create_date, pd.create_date as modify_date, pd.net_amount, pd.modification_rationale_id, 
+pd.payment_status_id, p.user_id, pd.component_project_id, 
+pd.date_modified, pd.date_paid, pd.gross_amount, pd.charity_ind, pd.create_user, 
+pd.parent_payment_id, pd.total_amount, pd.installment_number, pd.jira_issue_id
+FROM payment p
+INNER JOIN payment_detail pd ON pd.payment_detail_id = p.most_recent_detail_id
+WHERE
+  AND pd.jira_issue_id = %d
+`
+
 // TODO - NOT checking on pd.net_amount = %d for now because you could edit an amount it'd create another payment.
 const QUERY_PAYMENT = `SELECT 
 p.payment_id, pd.payment_detail_id, pd.payment_desc, pd.payment_type_id, pd.payment_method_id, 
@@ -40,6 +52,8 @@ const INSERT_PAYMENT_DETAIL_XREF = 'INSERT INTO payment_detail_xref (payment_id,
 
 const INSERT_PAYMENT_STATUS_REASON_XREF = 'INSERT INTO payment_detail_status_reason_xref (payment_detail_id, payment_status_reason_id) VALUES(?,?)'
 
+const UPDATE_PAYMENT_STATUS = 'UPDATE payment_detail SET payment_status_id = ? WHERE payment_detail_id = ?'
+
 /**
  * Prepare Informix statement
  * @param {Object} connection the Informix connection
@@ -64,6 +78,30 @@ async function paymentExists(payment, connection) {
     return connection.queryAsync(query)
   } catch (e) {
     logger.error(`Error in 'paymentExists' ${e}`)
+    throw e
+  } finally {
+    if (isNewConn) await connection.closeAsync()
+  }
+}
+
+/**
+ * Get challenge payments
+ * @param {String} v5ChallengeId The v5 challenge id
+ * @param {Object} connection The connection
+ * @returns 
+ */
+async function getChallengePayments(v5ChallengeId, connection) {
+  let isNewConn = false
+  if (!connection) {
+    connection = await helper.getInformixConnection()
+    isNewConn = true
+  }
+  try {
+    const query = util.format(QUERY_EXISTING_PAYMENTS, v5ChallengeId)
+    logger.debug(`Getting existing payments - ${query}`)
+    return connection.queryAsync(query)
+  } catch (e) {
+    logger.error(`Error in 'getChallengePayments' ${e}`)
     throw e
   } finally {
     if (isNewConn) await connection.closeAsync()
@@ -108,7 +146,49 @@ async function createPayment(payment) {
   }
 }
 
+/**
+ * Cancel challenge payments
+ * @param {Array<Object>} payments The array of payments
+ */
+async function cancelPayments(payments) {
+  let connection
+  try {
+    connection = await helper.getInformixConnection()
+    await connection.beginTransactionAsync()
+
+    for (const payment of payments) {
+      if (payment.payment_status_id === config.PAID_PAYMENT_STATUS_ID) {
+        const paymentDetailId = await paymentDetailIdGen.getNextId()
+        const paymentId = await paymentIdGen.getNextId()
+        const insertDetail = await prepare(connection, INSERT_PAYMENT_DETAIL)
+        payment.net_amount = payment.net_amount * -1
+        await insertDetail.executeAsync([paymentDetailId, payment.net_amount, payment.net_amount, payment.payment_status_id, payment.modification_rationale_id, payment.payment_desc, payment.payment_type_id, payment.payment_method_id, payment.component_project_id, payment.charity_ind, payment.net_amount, payment.installment_number, payment.create_user, payment.jira_issue_id])
+        const insertPayment = await prepare(connection, INSERT_PAYMENT)
+        await insertPayment.executeAsync([paymentId, payment.user_id, paymentDetailId])
+        const insertDetailXref = await prepare(connection, INSERT_PAYMENT_DETAIL_XREF)
+        await insertDetailXref.executeAsync([paymentId, paymentDetailId])
+        const insertStatusXref = await prepare(connection, INSERT_PAYMENT_STATUS_REASON_XREF)
+        await insertStatusXref.executeAsync([paymentDetailId, config.V5_PAYMENT_DETAIL_STATUS_REASON_ID])
+      } else {
+        const cancellPayment = await prepare(connection, UPDATE_PAYMENT_STATUS)
+        await cancellPayment.executeAsync([config.CANCELLED_PAYMENT_STATUS_ID, payment.payment_detail_id])
+        logger.info(`Payment ${payment.payment_detail_id} has been cancelled`)
+      }
+    }
+    logger.info(`Payments have been canelled`)
+    await connection.commitTransactionAsync()
+  } catch (e) {
+    logger.error(`Error in 'cancelPayments' ${e}, rolling back transaction`)
+    await connection.rollbackTransactionAsync()
+    throw e
+  } finally {
+    await connection.closeAsync()
+  }
+}
+
 module.exports = {
   createPayment,
-  paymentExists
+  paymentExists,
+  cancelPayments,
+  getChallengePayments
 }
