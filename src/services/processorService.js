@@ -134,7 +134,7 @@ processUpdate.schema = {
       id: Joi.string().required(),
       legacyId: Joi.number().integer().positive(),
       task: Joi.object().keys({
-        memberId: Joi.string().allow(null)
+        memberId: Joi.alternatives().try(Joi.string(), Joi.number().integer().positive()).allow(null)
       }).unknown(true),
       name: Joi.string().required(),
       prizeSets: Joi.array().items(Joi.object().keys({
