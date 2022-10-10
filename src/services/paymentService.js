@@ -6,7 +6,8 @@ const util = require('util')
 const logger = require('../common/logger')
 const helper = require('../common/helper')
 const config = require('config');
-const IDGenerator = require('../common/idGenerator')
+const IDGenerator = require('../common/idGenerator');
+const { request } = require('http');
 
 // the paymentDetailId's generator
 const paymentDetailIdGen = new IDGenerator('PAYMENT_DETAIL_SEQ')
@@ -158,17 +159,15 @@ async function cancelPayments(payments) {
 
     for (const payment of payments) {
       if (payment.payment_status_id === config.PAID_PAYMENT_STATUS_ID) {
-        const paymentDetailId = await paymentDetailIdGen.getNextId()
-        const paymentId = await paymentIdGen.getNextId()
-        const insertDetail = await prepare(connection, INSERT_PAYMENT_DETAIL)
-        payment.net_amount = payment.net_amount * -1
-        await insertDetail.executeAsync([paymentDetailId, payment.net_amount, payment.net_amount, payment.payment_status_id, payment.modification_rationale_id, payment.payment_desc, payment.payment_type_id, payment.payment_method_id, payment.component_project_id, payment.charity_ind, payment.net_amount, payment.installment_number, payment.create_user, payment.jira_issue_id])
-        const insertPayment = await prepare(connection, INSERT_PAYMENT)
-        await insertPayment.executeAsync([paymentId, payment.user_id, paymentDetailId])
-        const insertDetailXref = await prepare(connection, INSERT_PAYMENT_DETAIL_XREF)
-        await insertDetailXref.executeAsync([paymentId, paymentDetailId])
-        const insertStatusXref = await prepare(connection, INSERT_PAYMENT_STATUS_REASON_XREF)
-        await insertStatusXref.executeAsync([paymentDetailId, config.V5_PAYMENT_DETAIL_STATUS_REASON_ID])
+        await helper.submitZendeskRequest({
+          requester: {
+            name: config.ZENDESK_REQUESTER_NAME,
+            email: config.ZENDESK_REQUESTER_EMAIL
+          },
+          subject: config.ZENDESK_DEFAULT_SUBJECT,
+          comment: `The payment ${payment.payment_detail_id} has already been paid and needs to be cancelled`,
+          priority: config.ZENDESK_DEFAULT_PRIORITY,
+        })
       } else {
         const cancellPayment = await prepare(connection, UPDATE_PAYMENT_STATUS)
         await cancellPayment.executeAsync([config.CANCELLED_PAYMENT_STATUS_ID, payment.payment_detail_id])

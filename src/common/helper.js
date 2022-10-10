@@ -44,6 +44,26 @@ function getKafkaOptions () {
 }
 
 /**
+ * Submit a request to zendesk
+ * @param {Object} request the request
+ */
+ async function submitZendeskRequest (requestBody) {
+  try {
+    return request
+      .post(`${config.ZENDESK_API_URL}/api/v2/requests`)
+      .send({
+        request: {
+          ...requestBody
+        }
+      })
+      .auth(`${config.ZENDESK_REQUESTER_EMAIL}/token`, config.ZENDESK_API_TOKEN)
+  } catch (e) {
+    logger.debug(`Failed to submit request: ${e.message}`)
+    throw e
+  }
+}
+
+/**
  * Get the m2m token
  * @returns {String} the mem token
  */
@@ -179,5 +199,6 @@ module.exports = {
   getUserId,
   getCopilotId,
   delay,
-  getRandomInt
+  getRandomInt,
+  submitZendeskRequest
 }
