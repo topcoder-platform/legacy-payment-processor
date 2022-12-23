@@ -50,6 +50,15 @@ async function processUpdate(message) {
   try {
     const winnerPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'prizes', [])
     const checkpointPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'checkpoint']), 'prizes', [])
+
+    // Make sure there are valid submissions before processing payments
+    const challengeSubmissionsRes = await helper.getRequest(`${config.TC_API}/submissions?challengeId=${v5ChallengeId}`)
+    if (winnerPrizes.length > 0 && _.filter(_.get(challengeSubmissionsRes, 'body', []), s => s.type === config.SUBMISSION_TYPES.SUBMISSION).length === 0) {
+      return
+    }
+    if (checkpointPrizes.length > 0 && _.filter(_.get(challengeSubmissionsRes, 'body', []), s => s.type === config.SUBMISSION_TYPES.CHECKPOINT_SUBMISSION).length === 0) {
+      return
+    }
     // const winnerPaymentDesc = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'description', '')
     //` w => w.type === 'placement' || _.isUndefined(w.type)` is used here to support challenges where the type is not set (old data or other tracks that only have placements)
     const winnerMembers = _.sortBy(_.filter(_.get(message.payload, 'winners', []), w => w.type === 'placement' || _.isUndefined(w.type)), ['placement'])

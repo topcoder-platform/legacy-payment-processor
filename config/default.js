@@ -60,5 +60,10 @@ module.exports = {
   PAYMENT_METHOD_ID: process.env.PAYMENT_METHOD_ID || 1,
   CHARITY_IND: process.env.CHARITY_IND || 0,
   INSTALLMENT_NUMBER: process.env.INSTALLMENT_NUMBER || 1,
-  COPILOT_ROLE_ID: process.env.COPILOT_ROLE_ID || 'cfe12b3f-2a24-4639-9d8b-ec86726f76bd'
+  COPILOT_ROLE_ID: process.env.COPILOT_ROLE_ID || 'cfe12b3f-2a24-4639-9d8b-ec86726f76bd',
+
+  SUBMISSION_TYPES: {
+    SUBMISSION: process.env.CONTEST_SUBMISSION_TYPE || 'Contest Submission',
+    CHECKPOINT_SUBMISSION: process.env.CHECKPOINT_SUBMISSION_TYPE || 'Checkpoint Submission'
+  }
 }
