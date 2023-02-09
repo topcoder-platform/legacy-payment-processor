@@ -93,13 +93,19 @@ async function patchRequest(url, body, m2mToken) {
  * @param {String} m2mToken the M2M token
  * @returns {Object} the response
  */
-async function getRequest(url) {
-  const m2mToken = await getM2MToken()
-  return request
-    .get(url)
-    .set('Authorization', `Bearer ${m2mToken}`)
-    .set('Content-Type', 'application/json')
-    .set('Accept', 'application/json')
+async function getRequest(url, m2mToken) {
+  if (m2mToken) {
+    return request
+      .get(url)
+      .set('Authorization', `Bearer ${m2mToken}`)
+      .set('Content-Type', 'application/json')
+      .set('Accept', 'application/json')
+  } else {
+    return request
+      .get(url)
+      .set('Content-Type', 'application/json')
+      .set('Accept', 'application/json')
+  }
 }
 
 /**
@@ -201,5 +207,6 @@ module.exports = {
   getCopilotId,
   delay,
   getRandomInt,
-  submitZendeskRequest
+  submitZendeskRequest,
+  getM2MToken
 }
