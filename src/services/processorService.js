@@ -77,6 +77,7 @@ async function processUpdate(message) {
             typeId: config.WINNER_PAYMENT_TYPE_ID
           }, basePayment)
 
+          logger.info(`Challenge winner ${memberId} payment object details: ` + JSON.stringify(payment))
           await paymentService.createPayment(payment)
         }
       } catch (error) {
@@ -98,6 +99,7 @@ async function processUpdate(message) {
             typeId: config.CHECKPOINT_WINNER_PAYMENT_TYPE_ID
           }, basePayment)
 
+          logger.info(`Challenge checkpoint winner ${memberId} payment object details: ` + JSON.stringify(payment))
           await paymentService.createPayment(payment)
         }
       } catch (error) {
@@ -122,6 +124,8 @@ async function processUpdate(message) {
           desc: (copilotPaymentDesc ? copilotPaymentDesc : `${message.payload.name} - Copilot`),
           typeId: config.COPILOT_PAYMENT_TYPE_ID
         }, basePayment)
+
+        logger.info(`Copilot ${memberId} payment object details: ` + JSON.stringify(copilotPayment))
         await paymentService.createPayment(copilotPayment)
       } catch (error) {
         logger.error(`For challenge ${v5ChallengeId}, add copilot payments error: ${error}`)
