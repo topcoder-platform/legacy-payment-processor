@@ -118,7 +118,7 @@ Run the application
 npm start
 ```
 
-### Local Deployment with Docker
+### Local Deployment with Nodejs app and informix in Docker, and Kafka in local machine
 
 1. Make sure that Kafka in running as instructions above.
 
@@ -142,6 +142,46 @@ docker-compose up
 ```
 
 5. When you are running the application for the first time, It will take some time initially to download the image and install the dependencies
+
+### Local Deployment with complete setup in Docker
+
+1. Create a network in docker using `docker network create <network-name>`, for example `docker network create lpp`
+
+2. Use the network created above, in `/local/docker-compose.yml` file by adding the following section:
+```
+networks:
+  default:
+    external:
+      name: lpp
+```
+
+3. Start the dependencies(zookeeper, kafka and informix) in docker by navigating to `local directory` and issuing `docker-compose up`
+
+4. Modify the following in config parameters `config/default.js`:
+```
+KAFKA_URL: process.env.KAFKA_URL || 'kafka:9092'
+INFORMIX.HOST: process.env.INFORMIX_HOST || 'informix'
+```
+
+5. Go to the `docker directory` and create an `.env` file with the following configuration:
+```
+AUTH0_CLIENT_ID=jGIf2pd3f44B1jqvOai30BIKTZanYBfU
+AUTH0_CLIENT_SECRET=ldzqVaVEbqhwjM5KtZ79sG8djZpAVK8Z7qieVcC3vRjI4NirgcinKSBpPwk6mYYP
+KAFKA_URL=kafka:9092
+INFORMIX_HOST=informix
+```
+
+6. Use the network created above, in `/docker/docker-compose.yml` file by adding the following section:
+```
+networks:
+  default:
+    external:
+      name: lpp
+```
+
+7. Start the app in docker by issuing `docker-compose up` in the `docker directory`
+
+8. When you are running the application for the first time, It will take some time initially to download the image and install the dependencies
 
 ## Verification
 Refer to the verification document `Verification.md`
