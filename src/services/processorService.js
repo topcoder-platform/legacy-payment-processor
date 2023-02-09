@@ -54,9 +54,11 @@ async function processUpdate(message) {
     // Make sure there are valid submissions before processing payments
     const challengeSubmissionsRes = await helper.getRequest(`${config.TC_API}/submissions?challengeId=${v5ChallengeId}`)
     if (winnerPrizes.length > 0 && _.filter(_.get(challengeSubmissionsRes, 'body', []), s => s.type === config.SUBMISSION_TYPES.SUBMISSION).length === 0) {
+      logger.error(`Submission phase has no submission present for challenge: ${v5ChallengeId}`)
       return
     }
     if (checkpointPrizes.length > 0 && _.filter(_.get(challengeSubmissionsRes, 'body', []), s => s.type === config.SUBMISSION_TYPES.CHECKPOINT_SUBMISSION).length === 0) {
+      logger.error(`Checkpoint phase has no checkpoint submission present for challenge: ${v5ChallengeId}`)
       return
     }
     // const winnerPaymentDesc = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'description', '')

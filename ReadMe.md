@@ -145,6 +145,8 @@ docker-compose up
 
 ### Local Deployment with complete setup in Docker
 
+- For changes made to source-code to be reflected in the docker image, delete the container, image and volume for a fresh build
+
 1. Create a network in docker using `docker network create <network-name>`, for example `docker network create lpp`
 
 2. Use the network created above, in `/local/docker-compose.yml` file by adding the following section:
@@ -182,6 +184,8 @@ networks:
 7. Start the app in docker by issuing `docker-compose up` in the `docker directory`
 
 8. When you are running the application for the first time, It will take some time initially to download the image and install the dependencies
+
+9. For sending messages to kafka, open a terminal and issue `docker exec -it kafkaC /opt/kafka/bin/kafka-console-producer.sh --broker-list localhost:9093 --topic challenge.notification.update` Once the producer is up and running, send events as required.
 
 ## Verification
 Refer to the verification document `Verification.md`
