@@ -17,16 +17,16 @@ pool.setMaxPoolSize(config.get('INFORMIX.POOL_MAX_SIZE'))
  * Get Informix connection using the configured parameters
  * @return {Object} Informix connection
  */
-async function getInformixConnection () {
+async function getInformixConnection() {
   // construct the connection string from the configuration parameters.
   const connectionString = 'SERVER=' + config.get('INFORMIX.SERVER') +
-                           ';DATABASE=' + config.get('INFORMIX.DATABASE') +
-                           ';HOST=' + config.get('INFORMIX.HOST') +
-                           ';Protocol=' + config.get('INFORMIX.PROTOCOL') +
-                           ';SERVICE=' + config.get('INFORMIX.PORT') +
-                           ';DB_LOCALE=' + config.get('INFORMIX.DB_LOCALE') +
-                           ';UID=' + config.get('INFORMIX.USER') +
-                           ';PWD=' + config.get('INFORMIX.PASSWORD')
+    ';DATABASE=' + config.get('INFORMIX.DATABASE') +
+    ';HOST=' + config.get('INFORMIX.HOST') +
+    ';Protocol=' + config.get('INFORMIX.PROTOCOL') +
+    ';SERVICE=' + config.get('INFORMIX.PORT') +
+    ';DB_LOCALE=' + config.get('INFORMIX.DB_LOCALE') +
+    ';UID=' + config.get('INFORMIX.USER') +
+    ';PWD=' + config.get('INFORMIX.PASSWORD')
   const conn = await pool.openAsync(connectionString)
   return Promise.promisifyAll(conn)
 }
@@ -35,7 +35,7 @@ async function getInformixConnection () {
  * Get Kafka options
  * @return {Object} the Kafka options
  */
-function getKafkaOptions () {
+function getKafkaOptions() {
   const options = { connectionString: config.KAFKA_URL, groupId: config.KAFKA_GROUP_ID }
   if (config.KAFKA_CLIENT_CERT && config.KAFKA_CLIENT_CERT_KEY) {
     options.ssl = { cert: config.KAFKA_CLIENT_CERT, key: config.KAFKA_CLIENT_CERT_KEY }
@@ -47,7 +47,7 @@ function getKafkaOptions () {
  * Submit a request to zendesk
  * @param {Object} request the request
  */
- async function submitZendeskRequest (requestBody) {
+async function submitZendeskRequest(requestBody) {
   try {
     return request
       .post(`${config.ZENDESK_API_URL}/api/v2/requests`)
@@ -67,7 +67,7 @@ function getKafkaOptions () {
  * Get the m2m token
  * @returns {String} the mem token
  */
-async function getM2MToken () {
+async function getM2MToken() {
   return m2m.getMachineToken(config.AUTH0_CLIENT_ID, config.AUTH0_CLIENT_SECRET)
 }
 
@@ -78,7 +78,7 @@ async function getM2MToken () {
  * @param {String} m2mToken the m2m token
  * @returns {Object} the response
  */
-async function patchRequest (url, body, m2mToken) {
+async function patchRequest(url, body, m2mToken) {
   return request
     .patch(url)
     .send(body)
@@ -93,12 +93,19 @@ async function patchRequest (url, body, m2mToken) {
  * @param {String} m2mToken the M2M token
  * @returns {Object} the response
  */
-async function getRequest (url, m2mToken) {
-  return request
-    .get(url)
-    .set('Authorization', `Bearer ${m2mToken}`)
-    .set('Content-Type', 'application/json')
-    .set('Accept', 'application/json')
+async function getRequest(url, m2mToken) {
+  if (m2mToken) {
+    return request
+      .get(url)
+      .set('Authorization', `Bearer ${m2mToken}`)
+      .set('Content-Type', 'application/json')
+      .set('Accept', 'application/json')
+  } else {
+    return request
+      .get(url)
+      .set('Content-Type', 'application/json')
+      .set('Accept', 'application/json')
+  }
 }
 
 /**
@@ -108,7 +115,7 @@ async function getRequest (url, m2mToken) {
  * @param {String} m2mToken the M2M token
  * @returns {Object} the response
  */
-async function putRequest (url, body, m2mToken) {
+async function putRequest(url, body, m2mToken) {
   return request
     .put(url)
     .send(body)
@@ -124,7 +131,7 @@ async function putRequest (url, body, m2mToken) {
  * @param {String} m2mToken the M2M token
  * @returns {Object} the response
  */
-async function postRequest (url, body, m2mToken) {
+async function postRequest(url, body, m2mToken) {
   return request
     .post(url)
     .send(body)
@@ -138,7 +145,7 @@ async function postRequest (url, body, m2mToken) {
  * @param {String} handle the user's handle
  * @returns {String} the userId
  */
-async function getUserId (handle) {
+async function getUserId(handle) {
   const token = await getM2MToken()
   const url = `${config.TC_API}/members/${handle}?fields=userId`
 
@@ -155,7 +162,7 @@ async function getUserId (handle) {
  * @param {String} challengeId the challengeId
  * @returns {String} the userId
  */
-async function getCopilotId (challengeId) {
+async function getCopilotId(challengeId) {
   const token = await getM2MToken()
   const url = `${config.TC_API}/resources?challengeId=${challengeId}&roleId=${config.COPILOT_ROLE_ID}`
   const res = await request
@@ -171,9 +178,9 @@ async function getCopilotId (challengeId) {
  * @param {Number} ms the milliseconds to delay
  * @returns a promise
  */
-function delay (ms) {
+function delay(ms) {
   return new Promise(resolve => {
-      setTimeout(resolve, ms)
+    setTimeout(resolve, ms)
   })
 }
 
@@ -200,5 +207,6 @@ module.exports = {
   getCopilotId,
   delay,
   getRandomInt,
-  submitZendeskRequest
+  submitZendeskRequest,
+  getM2MToken
 }

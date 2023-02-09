@@ -5,6 +5,7 @@
 module.exports = {
   LOG_LEVEL: process.env.LOG_LEVEL || 'debug',
 
+  // change KAFKA_URL to kafka:9092 in case kafka is setup in docker using /local/docker-compose.yml
   KAFKA_URL: process.env.KAFKA_URL || 'localhost:9092',
   // below are used for secure Kafka connection, they are optional
   // for the local Kafka, they are not needed
@@ -29,6 +30,7 @@ module.exports = {
   INFORMIX: {
     SERVER: process.env.INFORMIX_SERVER || 'informixoltp_tcp', // informix server
     DATABASE: process.env.INFORMIX_DATABASE || 'informixoltp', // informix database
+    // change informix HOST to informix in case informix is setup in docker using /local/docker-compose.yml
     HOST: process.env.INFORMIX_HOST || 'localhost', // host
     PROTOCOL: process.env.INFORMIX_PROTOCOL || 'onsoctcp',
     PORT: process.env.INFORMIX_PORT || '2021', // port
