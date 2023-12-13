@@ -67,5 +67,7 @@ module.exports = {
   SUBMISSION_TYPES: {
     SUBMISSION: process.env.CONTEST_SUBMISSION_TYPE || 'Contest Submission',
     CHECKPOINT_SUBMISSION: process.env.CHECKPOINT_SUBMISSION_TYPE || 'Checkpoint Submission'
-  }
+  },
+
+  TOPCROWD_CHALLENGE_TEMPLATE_ID: "75a043e8-8f93-4979-8ee9-bb625bd2d68d"
 }

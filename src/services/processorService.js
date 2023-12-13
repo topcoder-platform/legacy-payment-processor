@@ -51,16 +51,19 @@ async function processUpdate(message) {
     const winnerPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'prizes', [])
     const checkpointPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'checkpoint']), 'prizes', [])
 
-    // Make sure there are valid submissions before processing payments
-    const m2mToken = await helper.getM2MToken()
-    const challengeSubmissionsRes = await helper.getRequest(`${config.TC_API}/submissions?challengeId=${v5ChallengeId}`, m2mToken)
-    if (winnerPrizes.length > 0 && _.filter(_.get(challengeSubmissionsRes, 'body', []), s => s.type === config.SUBMISSION_TYPES.SUBMISSION).length === 0) {
-      logger.error(`Submission phase has no submission present for challenge: ${v5ChallengeId}`)
-      return
-    }
-    if (checkpointPrizes.length > 0 && _.filter(_.get(challengeSubmissionsRes, 'body', []), s => s.type === config.SUBMISSION_TYPES.CHECKPOINT_SUBMISSION).length === 0) {
-      logger.error(`Checkpoint phase has no checkpoint submission present for challenge: ${v5ChallengeId}`)
-      return
+    // Make sure there are valid submissions before processing payments for non TopCrowd Challenges
+    const timelineTemplateId = _.get(message.payload, 'timelineTemplateId');
+    if (timelineTemplateId != config.get('TOPCROWD_CHALLENGE_TEMPLATE_ID')) {
+      const m2mToken = await helper.getM2MToken()
+      const challengeSubmissionsRes = await helper.getRequest(`${config.TC_API}/submissions?challengeId=${v5ChallengeId}`, m2mToken)
+      if (winnerPrizes.length > 0 && _.filter(_.get(challengeSubmissionsRes, 'body', []), s => s.type === config.SUBMISSION_TYPES.SUBMISSION).length === 0) {
+        logger.error(`Submission phase has no submission present for challenge: ${v5ChallengeId}`)
+        return
+      }
+      if (checkpointPrizes.length > 0 && _.filter(_.get(challengeSubmissionsRes, 'body', []), s => s.type === config.SUBMISSION_TYPES.CHECKPOINT_SUBMISSION).length === 0) {
+        logger.error(`Checkpoint phase has no checkpoint submission present for challenge: ${v5ChallengeId}`)
+        return
+      }
     }
     // const winnerPaymentDesc = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'description', '')
     //` w => w.type === 'placement' || _.isUndefined(w.type)` is used here to support challenges where the type is not set (old data or other tracks that only have placements)
