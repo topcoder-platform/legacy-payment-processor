@@ -71,9 +71,7 @@ async function processUpdate(message) {
     const checkpointWinnerMembers = _.sortBy(_.filter(_.get(message.payload, 'winners', []), w => w.type === 'checkpoint'), ['placement'])
     if (_.isEmpty(winnerPrizes)) {
       logger.warn(`For challenge ${v5ChallengeId}, no winner payment avaiable`)
-    } else if (winnerPrizes.length !== winnerMembers.length) {
-      logger.error(`For challenge ${v5ChallengeId}, there is ${winnerPrizes.length} user prizes but ${winnerMembers.length} winners`)
-    } else if (timelineTemplateId != config.get('TOPCROWD_CHALLENGE_TEMPLATE_ID')) {
+    } else if (timelineTemplateId == config.get('TOPCROWD_CHALLENGE_TEMPLATE_ID')) {
       try {
         for (let i = 0; i < winnerMembers.length; i++) {
           const payment = _.assign({
@@ -89,6 +87,8 @@ async function processUpdate(message) {
       } catch (error) {
         logger.error(`For challenge ${v5ChallengeId}, add winner payments error: ${error}`)
       }
+    } else if (winnerPrizes.length !== winnerMembers.length) {
+      logger.error(`For challenge ${v5ChallengeId}, there is ${winnerPrizes.length} user prizes but ${winnerMembers.length} winners`)
     } else {
       try {
         for (let i = 1; i <= winnerPrizes.length; i++) {
