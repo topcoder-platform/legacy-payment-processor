@@ -44,8 +44,10 @@ const dataHandler = (messageSet, topic, partition) => Promise.each(messageSet, a
     return
   }
 
+  const timelineTemplateId = _.get(messageJSON.payload, 'timelineTemplateId');
+
   // Currently only process payments for challenges with `legacy.pureV5Task: true` or `legacy.pureV5: true`
-  if (!_.get(messageJSON.payload, 'legacy.pureV5Task', false) && !_.get(messageJSON.payload, 'legacy.pureV5', false)) {
+  if (!_.get(messageJSON.payload, 'legacy.pureV5Task', false) && !_.get(messageJSON.payload, 'legacy.pureV5', false) && timelineTemplateId != config.get('TOPCROWD_CHALLENGE_TEMPLATE_ID')) {
     logger.info(`Challenge Legacy Object ${JSON.stringify(_.get(messageJSON.payload, 'legacy'))} does not have legacy.pureV5Task: true or legacy.pureV5: true`)
     await consumer.commitOffset({ topic, partition, offset: m.offset })
     return

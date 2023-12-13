@@ -51,16 +51,19 @@ async function processUpdate(message) {
     const winnerPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'prizes', [])
     const checkpointPrizes = _.get(_.find(message.payload.prizeSets, ['type', 'checkpoint']), 'prizes', [])
 
-    // Make sure there are valid submissions before processing payments
-    const m2mToken = await helper.getM2MToken()
-    const challengeSubmissionsRes = await helper.getRequest(`${config.TC_API}/submissions?challengeId=${v5ChallengeId}`, m2mToken)
-    if (winnerPrizes.length > 0 && _.filter(_.get(challengeSubmissionsRes, 'body', []), s => s.type === config.SUBMISSION_TYPES.SUBMISSION).length === 0) {
-      logger.error(`Submission phase has no submission present for challenge: ${v5ChallengeId}`)
-      return
-    }
-    if (checkpointPrizes.length > 0 && _.filter(_.get(challengeSubmissionsRes, 'body', []), s => s.type === config.SUBMISSION_TYPES.CHECKPOINT_SUBMISSION).length === 0) {
-      logger.error(`Checkpoint phase has no checkpoint submission present for challenge: ${v5ChallengeId}`)
-      return
+    // Make sure there are valid submissions before processing payments for non TopCrowd Challenges
+    const timelineTemplateId = _.get(message.payload, 'timelineTemplateId');
+    if (timelineTemplateId != config.get('TOPCROWD_CHALLENGE_TEMPLATE_ID')) {
+      const m2mToken = await helper.getM2MToken()
+      const challengeSubmissionsRes = await helper.getRequest(`${config.TC_API}/submissions?challengeId=${v5ChallengeId}`, m2mToken)
+      if (winnerPrizes.length > 0 && _.filter(_.get(challengeSubmissionsRes, 'body', []), s => s.type === config.SUBMISSION_TYPES.SUBMISSION).length === 0) {
+        logger.error(`Submission phase has no submission present for challenge: ${v5ChallengeId}`)
+        return
+      }
+      if (checkpointPrizes.length > 0 && _.filter(_.get(challengeSubmissionsRes, 'body', []), s => s.type === config.SUBMISSION_TYPES.CHECKPOINT_SUBMISSION).length === 0) {
+        logger.error(`Checkpoint phase has no checkpoint submission present for challenge: ${v5ChallengeId}`)
+        return
+      }
     }
     // const winnerPaymentDesc = _.get(_.find(message.payload.prizeSets, ['type', 'placement']), 'description', '')
     //` w => w.type === 'placement' || _.isUndefined(w.type)` is used here to support challenges where the type is not set (old data or other tracks that only have placements)
@@ -68,6 +71,22 @@ async function processUpdate(message) {
     const checkpointWinnerMembers = _.sortBy(_.filter(_.get(message.payload, 'winners', []), w => w.type === 'checkpoint'), ['placement'])
     if (_.isEmpty(winnerPrizes)) {
       logger.warn(`For challenge ${v5ChallengeId}, no winner payment avaiable`)
+    } else if (timelineTemplateId == config.get('TOPCROWD_CHALLENGE_TEMPLATE_ID')) {
+      try {
+        for (let i = 0; i < winnerMembers.length; i++) {
+          const payment = _.assign({
+            memberId: winnerMembers[i].userId,
+            amount: winnerPrizes[i].value,
+            desc: `Payment - ${message.payload.name} - ${winnerMembers[i].placement} Place`,
+            typeId: config.WINNER_PAYMENT_TYPE_ID
+          }, basePayment)
+
+          logger.info(`TopCrowd Challenge winner ${payment.memberId} payment object details: ` + JSON.stringify(payment))
+          await paymentService.createPayment(payment)
+        }
+      } catch (error) {
+        logger.error(`For challenge ${v5ChallengeId}, add winner payments error: ${error}`)
+      }
     } else if (winnerPrizes.length !== winnerMembers.length) {
       logger.error(`For challenge ${v5ChallengeId}, there is ${winnerPrizes.length} user prizes but ${winnerMembers.length} winners`)
     } else {
@@ -80,7 +99,7 @@ async function processUpdate(message) {
             typeId: config.WINNER_PAYMENT_TYPE_ID
           }, basePayment)
 
-          logger.info(`Challenge winner ${memberId} payment object details: ` + JSON.stringify(payment))
+          logger.info(`Challenge winner ${payment.memberId} payment object details: ` + JSON.stringify(payment))
           await paymentService.createPayment(payment)
         }
       } catch (error) {
