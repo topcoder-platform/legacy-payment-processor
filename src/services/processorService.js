@@ -73,6 +73,22 @@ async function processUpdate(message) {
       logger.warn(`For challenge ${v5ChallengeId}, no winner payment avaiable`)
     } else if (winnerPrizes.length !== winnerMembers.length) {
       logger.error(`For challenge ${v5ChallengeId}, there is ${winnerPrizes.length} user prizes but ${winnerMembers.length} winners`)
+    } else if (timelineTemplateId != config.get('TOPCROWD_CHALLENGE_TEMPLATE_ID')) {
+      try {
+        for (let i = 0; i < winnerMembers.length; i++) {
+          const payment = _.assign({
+            memberId: winnerMembers[i].userId,
+            amount: winnerPrizes[i].value,
+            desc: `Payment - ${message.payload.name} - ${winnerMembers[i].placement} Place`,
+            typeId: config.WINNER_PAYMENT_TYPE_ID
+          }, basePayment)
+
+          logger.info(`TopCrowd Challenge winner ${memberId} payment object details: ` + JSON.stringify(payment))
+          await paymentService.createPayment(payment)
+        }
+      } catch (error) {
+        logger.error(`For challenge ${v5ChallengeId}, add winner payments error: ${error}`)
+      }
     } else {
       try {
         for (let i = 1; i <= winnerPrizes.length; i++) {
