@@ -18,6 +18,7 @@ async function processUpdate(message) {
   const createUserId = await helper.getUserId(message.payload.createdBy)
   const legacyId = _.get(message, 'payload.legacyId', null)
   const v5ChallengeId = _.get(message, 'payload.id', null)
+  const timelineTemplateId = _.get(message.payload, 'timelineTemplateId')
 
   if (!v5ChallengeId || v5ChallengeId === '') {
     logger.error('Payload of challenge does not contain a v5 Challenge UUID')
@@ -47,7 +48,23 @@ async function processUpdate(message) {
     const checkpointWinnerMembers = _.sortBy(_.filter(_.get(message.payload, 'winners', []), w => w.type === 'checkpoint'), ['placement'])
     if (_.isEmpty(winnerPrizes)) {
       logger.warn(`For challenge ${v5ChallengeId}, no winner payment avaiable`)
-    } else if (winnerPrizes.length !== winnerMembers.length) {
+    } else if (timelineTemplateId == config.get('TOPCROWD_CHALLENGE_TEMPLATE_ID')) {
+      try {
+        for (let i = 0; i < winnerMembers.length; i++) {
+          const payment = _.assign({
+            memberId: winnerMembers[i].userId,
+            amount: winnerPrizes[i].value,
+            desc: `Payment - ${message.payload.name} - ${winnerMembers[i].placement} Place`,
+            typeId: config.WINNER_PAYMENT_TYPE_ID
+          }, basePayment)
+
+          logger.info(`TopCrowd Challenge winner ${payment.memberId} payment object details: ` + JSON.stringify(payment))
+          await paymentService.createPayment(payment)
+        }
+      } catch (error) {
+        logger.error(`For challenge ${v5ChallengeId}, add winner payments error: ${error}`)
+      }
+    }else if (winnerPrizes.length !== winnerMembers.length) {
       logger.error(`For challenge ${v5ChallengeId}, there is ${winnerPrizes.length} user prizes but ${winnerMembers.length} winners`)
     } else {
       try {
