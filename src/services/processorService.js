@@ -81,7 +81,7 @@ async function processUpdate(message) {
             typeId: config.WINNER_PAYMENT_TYPE_ID
           }, basePayment)
 
-          logger.info(`TopCrowd Challenge winner ${memberId} payment object details: ` + JSON.stringify(payment))
+          logger.info(`TopCrowd Challenge winner ${payment.memberId} payment object details: ` + JSON.stringify(payment))
           await paymentService.createPayment(payment)
         }
       } catch (error) {
@@ -99,7 +99,7 @@ async function processUpdate(message) {
             typeId: config.WINNER_PAYMENT_TYPE_ID
           }, basePayment)
 
-          logger.info(`Challenge winner ${memberId} payment object details: ` + JSON.stringify(payment))
+          logger.info(`Challenge winner ${payment.memberId} payment object details: ` + JSON.stringify(payment))
           await paymentService.createPayment(payment)
         }
       } catch (error) {
